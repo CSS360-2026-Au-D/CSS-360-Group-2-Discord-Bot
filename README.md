@@ -4,7 +4,16 @@
 
 <img src="https://octodex.github.com/images/Robotocat.png" alt="image of robotocat" width="200" style="border:100px solid black"/>
 
-Names: Jack Jiang, Suna, Tyler, Michael W
+
+Names: Jack Jiang, Suna, Tyler, Michael W, Arshitha
+
+Step 6: Update your group's GitHub about box via the repository settings and the README.md file so that the front page reflects the state of your project.
+
+Week 3
+- We already created the main repository (this repo) for the group 2 discord bot assignment and also created a Kanban project board with our ideas for brainstorming what the discord bot should do.
+- We already added all 5 members as admins and collaborators for this main group 2 repository.
+- We already forked our own personal fork of the main group 2's repository.
+- We also already created a main group 2 discord server to communicate with each other and invited Professor Kaylea.
 
 # Bot Project Task #2:
 create the simple interaction shown in the README

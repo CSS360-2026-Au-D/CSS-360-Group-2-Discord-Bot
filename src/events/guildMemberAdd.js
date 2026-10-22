@@ -1,59 +1,57 @@
+
 import { EmbedBuilder, userMention } from "discord.js";
 
 const CHANNEL_NAME = process.env.CHANNEL_NAME;
-const MEME_URL = process.env.MEME_URL || "";
 
 const event = {
   name: "guildMemberAdd",
+
   async execute(member) {
     const channel = member.guild.channels.cache.find(
-      (channel) => channel.name === CHANNEL_NAME
+      (channel) =>
+        channel.name === CHANNEL_NAME &&
+        channel.isTextBased() &&
+        typeof channel.send === "function"
     );
 
-    /*
-      TODO: Change getWelcomeMessage to getWelcomeMessageWithMeme to send a meme to welcome your user.
-    */
-    const welcomeMessage = await getWelcomeMessage(member.id);
-    channel.send(welcomeMessage);
+    if (!channel) {
+      console.error(`Channel "${CHANNEL_NAME}" not found.`);
+      return;
+    }
+
+    const welcomeMessage = await getWelcomeMessageWithMeme(member.id);
+    await channel.send(welcomeMessage);
   },
 };
 
-const getWelcomeMessage = (userId) => {
-  /*
-    this function returns a welcome message.
-    Play around with the code here and customise the welcome message.
-  */
-  return {
-    content: `Welcome ${userMention(userId)},
-    Hope you have great time here!
-  `,
-  };
-};
-
-//
 const getWelcomeMessageWithMeme = async (userId) => {
-  /*
-    this function returns a welcome message with a meme.
-    Play around with the code here and customise the welcome message.
+  const messages = [
+    `Welcome ${userMention(userId)}! 🎉 Enjoy your stay!`,
+    `Hey ${userMention(userId)}! Welcome to our awesome server! 👋`,
+    `Everyone say hello to ${userMention(userId)}! 🎊`,
+  ];
 
-    TODO: Change this function to return different welcome message with a meme everytime a new user joins.
-  */
-  const meme = await getMeme();
+  const randomMessage =
+    messages[Math.floor(Math.random() * messages.length)];
+
+  const meme = getMeme();
 
   return {
-    content: `Welcome ${userMention(userId)},
-    Here's a meme for you to enjoy!`,
+    content: randomMessage,
     embeds: [meme],
   };
 };
 
-const getMeme = async () => {
-  /*
-    this function returns a meme.
+const getMeme = () => {
+  const memeUrls = [
+    "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+    "https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif",
+    "https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif",
+  ];
 
-    TODO: change this function to return a different meme randomly everytime a new user joins.
-  */
-  return new EmbedBuilder().setImage(MEME_URL);
+  const randomIndex = Math.floor(Math.random() * memeUrls.length);
+
+  return new EmbedBuilder().setImage(memeUrls[randomIndex]);
 };
 
 export default event;

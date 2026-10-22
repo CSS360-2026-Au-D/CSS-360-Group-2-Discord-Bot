@@ -2,6 +2,9 @@
 
 # Javascript Discord Welcome MemeBot with GitHub Codespaces
 
+<img src="https://octodex.github.com/images/Robotocat.png" alt="image of robotocat" width="200" style="border:100px solid black"/>
+
+
 Names: Jack Jiang, Suna, Tyler, Michael W, Arshitha
 
 Step 6: Update your group's GitHub about box via the repository settings and the README.md file so that the front page reflects the state of your project.
@@ -12,7 +15,12 @@ Week 3
 - We already forked our own personal fork of the main group 2's repository.
 - We also already created a main group 2 discord server to communicate with each other and invited Professor Kaylea.
 
-<img src="https://octodex.github.com/images/Robotocat.png" alt="image of robotocat" width="200" style="border:100px solid black"/>
+# Bot Project Task #2:
+create the simple interaction shown in the README
+![Discord Bot Screenshot](screenshot%20for%20group.png)
+
+
+
 
 Customize and deploy your own welcome memebot for your Discord server! 
 

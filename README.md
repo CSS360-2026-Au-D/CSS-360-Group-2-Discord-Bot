@@ -4,6 +4,10 @@
 
 Names: Jack Jiang, Suna, Tyler, Michael W
 
+Bot Project Task #2:
+# create the simple interaction shown in the README
+
+
 <img src="https://octodex.github.com/images/Robotocat.png" alt="image of robotocat" width="200" style="border:100px solid black"/>
 
 Customize and deploy your own welcome memebot for your Discord server! 

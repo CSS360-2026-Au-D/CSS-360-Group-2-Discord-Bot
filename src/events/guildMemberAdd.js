@@ -1,59 +1,39 @@
-import { EmbedBuilder, userMention } from "discord.js";
+require('dotenv').config();
 
-const CHANNEL_NAME = process.env.CHANNEL_NAME;
-const MEME_URL = process.env.MEME_URL || "";
+const Discord = require('discord.js');
 
-const event = {
-  name: "guildMemberAdd",
-  async execute(member) {
-    const channel = member.guild.channels.cache.find(
-      (channel) => channel.name === CHANNEL_NAME
-    );
+const client = new Discord.Client({
+    intents: [
+        Discord.GatewayIntentBits.Guilds,
+        Discord.GatewayIntentBits.GuildMessages,
+        Discord.GatewayIntentBits.MessageContent
+    ]
+});
+const prefix = '/';
 
-    /*
-      TODO: Change getWelcomeMessage to getWelcomeMessageWithMeme to send a meme to welcome your user.
-    */
-    const welcomeMessage = await getWelcomeMessage(member.id);
-    channel.send(welcomeMessage);
-  },
-};
+client.once('ready', ()=>
+{
+    console.log('bot is online');
+}
 
-const getWelcomeMessage = (userId) => {
-  /*
-    this function returns a welcome message.
-    Play around with the code here and customise the welcome message.
-  */
-  return {
-    content: `Welcome ${userMention(userId)},
-    Hope you have great time here!
-  `,
-  };
-};
+);
 
-//
-const getWelcomeMessageWithMeme = async (userId) => {
-  /*
-    this function returns a welcome message with a meme.
-    Play around with the code here and customise the welcome message.
 
-    TODO: Change this function to return different welcome message with a meme everytime a new user joins.
-  */
-  const meme = await getMeme();
+client.on('messageCreate', message=>{
 
-  return {
-    content: `Welcome ${userMention(userId)},
-    Here's a meme for you to enjoy!`,
-    embeds: [meme],
-  };
-};
+    if(!message.content.startsWith(prefix)) return;
 
-const getMeme = async () => {
-  /*
-    this function returns a meme.
+    const args = message.content.slice(prefix.length).split(/ +/);
+    const command = args.shift().toLowerCase();
 
-    TODO: change this function to return a different meme randomly everytime a new user joins.
-  */
-  return new EmbedBuilder().setImage(MEME_URL);
-};
+    if(command === '1+1')
+        message.channel.send('1+1 is equal to 2')
+    if(command === 'hello'){
+        message.channel.send('world')
+    }
 
-export default event;
+}
+);
+
+
+client.login(process.env.DISCORD_TOKEN);

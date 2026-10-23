@@ -26,9 +26,9 @@ const event = {
 
 const getWelcomeMessageWithMeme = async (userId) => {
   const messages = [
-    `Welcome ${userMention(userId)}! 🎉 Enjoy your stay!`,
-    `Hey ${userMention(userId)}! Welcome to our awesome server! 👋`,
-    `Everyone say hello to ${userMention(userId)}! 🎊`,
+    `Welcome ${userMention(userId)}! We are going to have so much fun`,
+    `Hey ${userMention(userId)}! You made it👋`,
+    `Everyone, say welcome to ${userMention(userId)}! 🎊`,
   ];
 
   const randomMessage =

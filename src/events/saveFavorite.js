@@ -54,9 +54,6 @@ const event = {
 
         await message.reply ("Added to your favorites!");
 
-
-
-
     }
 };
 export default event;

@@ -12,6 +12,8 @@ Week 3
 - We already forked our own personal fork of the main group 2's repository.
 - We also already created a main group 2 discord server to communicate with each other and invited Professor Kaylea.
 
+This is my own Michael W repository that is my personal fork of the main group's repository
+
 <img src="https://octodex.github.com/images/Robotocat.png" alt="image of robotocat" width="200" style="border:100px solid black"/>
 
 Customize and deploy your own welcome memebot for your Discord server! 

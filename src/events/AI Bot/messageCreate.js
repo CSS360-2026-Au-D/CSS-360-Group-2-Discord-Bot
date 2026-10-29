@@ -15,6 +15,7 @@
 import 'dotenv/config';
 import ollama from 'ollama';
 import { Client, GatewayIntentBits } from 'discord.js';
+import saveFavorite from './saveFavorite.js';
 
 const client = new Client({
     intents: [
@@ -48,6 +49,7 @@ async function askAI(inp){
 
 
 client.on('messageCreate', async message=>{
+    await saveFavorite.execute(message);
 
     if(!message.content.startsWith(prefix)) return;
 

@@ -1,6 +1,8 @@
 
 import ollama from "ollama";
 
+const AI_MODEL = "llama3.2:1b";
+
 const event = {
   name: "messageCreate",
 
@@ -8,7 +10,8 @@ const event = {
     // Ignore bot messages
     if (message.author.bot) return;
 
-    const content = message.content.trim().toLowerCase();
+    const rawContent = message.content.trim();
+    const content = rawContent.toLowerCase();
 
     // Hello command
     if (content === "hello") {
@@ -25,14 +28,111 @@ const event = {
     // Help command
     if (content === "help") {
       await message.reply(
-        "Available commands: hello, ping, help, /10+5, /10-5, /10*5, /10/5, /ai question"
+        "Available commands:\n" +
+        "hello - Welcome message\n" +
+        "ping - Check bot status\n" +
+        "help - Show commands\n" +
+        "/ai question - Ask AI\n" +
+        "/similar song name - Recommend similar songs\n" +
+        "/10+5 - Calculator (+, -, *, /)"
       );
       return;
     }
 
-    // AI command
+    // Similar Song Recommendation
+    if (content === "/similar" || content.startsWith("/similar ")) {
+      const song = rawContent.slice(8).trim();
+
+      if (!song) {
+        await message.reply(
+          "Please enter a song name. Example: /similar Blinding Lights"
+        );
+        return;
+      }
+
+      try {
+        await message.channel.sendTyping();
+
+        const prompt = `
+You are a knowledgeable music recommendation assistant.
+
+The user wants songs similar to: "${song}".
+
+Recommend exactly 5 real, existing songs.
+
+Consider the following similarities:
+- Music genre
+- Mood and atmosphere
+- Rhythm and energy
+- Instrumentation
+- Production style
+
+For each song, provide:
+1. Song title
+2. Artist name
+3. One short sentence explaining the similarity
+
+Rules:
+- Do not recommend the original song.
+- Do not repeat any song.
+- Avoid inventing songs or artists.
+- Prefer well-known, verifiable releases.
+- Keep the response concise.
+- Use a numbered list.
+- Do not add an introduction.
+`;
+
+        // Request recommendations from Ollama
+        const stream = await ollama.chat({
+          model: AI_MODEL,
+          messages: [
+            { role: "user", content: prompt }
+          ],
+          stream: true
+        });
+
+        let answer = "";
+
+        // Collect streaming response
+        for await (const part of stream) {
+          answer += part.message?.content || "";
+        }
+
+        if (!answer.trim()) {
+          await message.reply(
+            "AI could not generate song recommendations."
+          );
+          return;
+        }
+
+        const replyText =
+          `🎵 Similar songs to "${song}":\n\n${answer}`;
+
+        // Send response in Discord-safe chunks
+        for (let i = 0; i < replyText.length; i += 1900) {
+          await message.channel.send(
+            replyText.slice(i, i + 1900)
+          );
+        }
+
+      } catch (error) {
+        console.error("Similar song recommendation error:", error);
+
+        try {
+          await message.reply(
+            "Sorry, I couldn't generate similar songs. Please try again."
+          );
+        } catch (replyError) {
+          console.error("Discord reply error:", replyError);
+        }
+      }
+
+      return;
+    }
+
+    // General AI command
     if (content === "/ai" || content.startsWith("/ai ")) {
-      const question = message.content.trim().slice(3).trim();
+      const question = rawContent.slice(3).trim();
 
       if (!question) {
         await message.reply(
@@ -42,12 +142,11 @@ const event = {
       }
 
       try {
-        // Show typing indicator
         await message.channel.sendTyping();
 
         // Ask Ollama using streaming
         const stream = await ollama.chat({
-          model: "llama3.2:1b",
+          model: AI_MODEL,
           messages: [
             { role: "user", content: question }
           ],
@@ -61,7 +160,7 @@ const event = {
           answer += part.message?.content || "";
         }
 
-        // Send AI response to Discord
+        // Reply with AI response
         await message.reply(
           answer.slice(0, 1900) ||
           "AI returned an empty response."

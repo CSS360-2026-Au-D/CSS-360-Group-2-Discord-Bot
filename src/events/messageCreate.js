@@ -1,9 +1,29 @@
 
 import ollama from "ollama";
 import axios from "axios";
+import { ChannelType, PermissionBitField } from "discord.js";
 import { EmbedBuilder } from "discord.js";
+import {
+  joinVoiceChannel,
+  getVoiceConnection,
+  createAudioPlayer,
+  createAudioResource,
+  entersState,
+  AudioPlayerStatus,
+  VoiceConnectionStatus,
+  NoSubscriberBehavior
+} from "@discordjs/voice";
 
 const AI_MODEL = "llama3.2:1b";
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
+  ]
+});
 
 const event = {
   name: "messageCreate",
@@ -40,6 +60,21 @@ const event = {
       );
       return;
     }
+
+    //===================================================================
+    //VOICE CHANNEL VARIABLES
+    //Voice Channel the bot should play in (matches any voice channel whose
+    //name contains this text, case-insensitive, e.g. "Lounge"
+    const LOUNGE_NAME = "lounge";
+
+    // How long the bot stays in the channel after a song ends
+    const IDLE_LEAVE_MS = 30_000;
+
+    // One audio player per server: guildId -> { player, idleTimer }
+    const sessions = new Map();
+
+    //END OF VOICE CHANNEL VARIABLES
+    //===================================================================
 
         // ============================================================
     // Song Preview Card  (/song <song name>  or  /song <song> by <artist>)
@@ -303,6 +338,197 @@ Rules:
         }
       }
 
+      return;
+    }
+
+    //=====================================================================================
+    //VOICE CHANNEL FUNCTIONS
+
+    const client = new Client({
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
+      ]
+    });
+
+    // Pick the voice channel: the lounge first, otherwise wherever
+    // the person who type the command is sitting.
+    function getTargetChannel(message) {
+      const lounge = message.guild.channels.cache.find(
+        (c) =>
+          c.type === ChannelType.GuildVoice && c.name.toLowerCase().includes(LOUNGE_NAME)
+      );
+      return lounge ?? message.member?.voice?.channel ?? null;
+    }
+
+    // Leave the voice channel and clean up
+    function stopAndLeave(guildId) {
+      const session = sessions.get(guildId);
+      if (session) {
+        clearTimeout(session.idleTimer);
+        session.player.stop(true);
+        sessions.delete(guildId);
+      }
+
+      const connection = getVoiceConnection(guildId);
+      if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
+        connection.destroy();
+      }
+
+      return Boolean(session || connection);
+    }
+
+    // Play a track's 30-second preview in the voice channel.
+    // Returns { ok: true, channelName } or { ok: false, reason }.
+    async function playPreview(message, track) {
+      const { guild } = message;
+
+      if (!track.previewUrl) {
+        return { ok: false, reason: "That song has no audio preview available."};
+      }
+
+      const channel = getTargetChannel(message);
+      if (!channel) {
+        return {
+          ok: false,
+          reason: 'I couldnt find a voice channel named "${LOUNGE_NAME}", and you are not in a voice channel.'
+        };
+      }
+
+      // Make sure the bot is actually allowed to join and talk
+      const perms = channel.permissionsFor(guild.members.me);
+      if (
+        !perms?.has([
+          PermissionsBitField.Flags.Connect,
+          PermissionsBitField.Flags.Speak
+        ])
+      ) {
+        return {
+          ok: false,
+          reason: 'I dont have permission to Connect and Speak in **${channel.name}**.'
+        };
+      }
+
+      // Join the channel (or move if we're in a different one)
+      let connection = getVoiceConnection(guild.id);
+
+      if (!connection || connection.joinConfig.channelId !== channel.id) {
+        connection?.destroy();
+
+        connection = joinVoiceChannel({
+          channelId: channel.id,
+          guildId: guild.id,
+          adapterCreator: guild.voiceAdapterCreator,
+          selfDeaf: true
+        });
+
+        // If Discord kicks/moves the bot, try to reconnect; otherwise clean up
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+          try {
+            await Promise.race([
+              entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+              entersState(connection, VoiceConnectionStatus.Connecting, 5000)
+            ]);
+          } catch {
+            stopAndLeave(guild.id);
+          }
+        });
+      }
+
+      try {
+        await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
+      } catch (error) {
+        console.error("Voice connection error:", error);
+        stopAndLeave(guild.id);
+        return { ok: false, reason: "I couldn't connect to the voice channel." };
+        }
+
+      // Create the audio player once per server
+      let session = sessions.get(guild.id);
+      if (!session) {
+        const player = createAudioPlayer({
+          behaviors: { noSubscriber: NoSubscriberBehavior.Pause }
+        });
+        session = { player, idleTimer: null };
+        sessions.set(guild.id, session);
+
+        player.on("error", (error) => {
+          console.error("Audio player error:", error);
+        });
+
+        // When the song finishes, leave after a short delay
+        player.on(AudioPlayerStatus.Idle, () => {
+          clearTimeout(session.idleTimer);
+          session.idleTimer = setTimeout(
+            () => stopAndLeave(guild.id),
+            IDLE_LEAVE_MS
+          );
+        });
+      }
+
+      clearTimeout(session.idleTimer);
+      connection.subscribe(session.player);
+
+      // Passing the URL string lets @discordjs/voice stream it through FFmpeg
+      const resource = createAudioResource(track.previewUrl);
+      session.player.play(resource);
+
+      return { ok: true, channelName: channel.name };
+    }
+
+    //END OF VOICE CHANNEL FUNCTIONS
+
+    //Play a song preview in the Lounge voice channel
+    if (content === "/play" || content.startsWith("/play ")) {
+      const song = rawContent.slice(5).trim();
+
+      if (!message.guild) {
+        await message.reply("This command only works in a server.");
+        return;
+      }
+
+      if (!song) {
+        await message.reply(
+          "Please enter a song name. Example: /play Blinding Lights or /play Hello by Adele"
+        );
+        return;
+      }
+
+      try {
+        await message.channel.sendTyping();
+
+        if (!song) {
+          await message.reply('No results found for "${song}". Try another song name.');
+          return;
+        }
+
+        const result = await playPreview(message, track);
+
+        if (!result.ok) {
+          await message.reply(result.reason);
+          return;
+        }
+        
+        await message.reply(
+          `🎶 Now playing a 30-second preview of **${track.trackName}** by **${track.artistName}** in **${result.channelName}**`
+        );
+      } catch (error) {
+        console.error("Play error:", error);
+        try {
+          await message.reply("Sorry, I couldn't play that song. Please try again.");
+        } catch (replyError) {
+          console.error("Discord reply error:", replyError);
+        }
+      }
+      return;
+    }
+
+    //Stop playback and leave the voice channel
+    if (content === "/stop") {
+      const left = stopAndLeave(message.guild?.id);
+      await message.reply(left ? "⏹️ Stopped and left the voice channel." : "I'm not playing anything.");
       return;
     }
 

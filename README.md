@@ -42,8 +42,7 @@ This release introduces AI integration and several music-related features to our
 ## Summary
 This sprint expanded our Discord bot with AI-powered conversations, favorite song management, personalized music recommendations, visual song previews, and voice channel audio playback.
 
-Step 6: Update your group's GitHub about box via the repository settings and the README.md file so that the front page reflects the state of your project.
-
+--------------------------------------------------------------------------------------------------------
 Week 3
 - We already created the main repository (this repo) for the group 2 discord bot assignment and also created a Kanban project board with our ideas for brainstorming what the discord bot should do.
 - We already added all 5 members as admins and collaborators for this main group 2 repository.

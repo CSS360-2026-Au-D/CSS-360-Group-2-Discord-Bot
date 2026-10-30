@@ -9,7 +9,7 @@ const event = {
 
         //add the viewFavorites
 
-        if (content === "/ai viewFavorites") {
+        if (content === "/viewFavorites") {
             const userId = message.author.id;
             const userFavorites = favorites.get(userId) || [];
             if (userFavorites.length === 0) {
@@ -18,16 +18,16 @@ const event = {
     } 
 
     const list = userFavorites
-        .map((song, index) => '${index + 1}. ${song}')
+        .map((song, index) => `${index + 1}. ${song}`)
         .join("\n");
 
-    await message.reply('Your favorite songs:\n${list}');
+    await message.reply(`Your favorite songs:\n${list}`);
     return;
 }
 
         //stop the bot if the message is not saveFavorite
 
-        if(content !== "/ai saveFavorite") return;
+        if(content !== "/saveFavorite") return;
         const userId =message.author.id;
 
         if (!favorites.has(userId)) {
@@ -42,8 +42,8 @@ const event = {
         if (!originalMessage.author.bot) {
             return;
         }
-        const musicBotId = "1564843853448609882";
-        if (originalMessage.author.id !== musicBotId) {
+
+        if (originalMessage.author.id !== message.client.user.id) {
             return;
         }
         const song = originalMessage.content;

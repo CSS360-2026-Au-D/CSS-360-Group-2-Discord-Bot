@@ -1,7 +1,25 @@
 
-import { askGemini } from "../services/gemini";
+main
+import { askGemini } from "../services/gemini.js";
 import axios from "axios";
 import { EmbedBuilder } from "discord.js";
+
+const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
+// const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
+
+// for the music bot to play music
+import {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  StreamType
+} from "@discordjs/voice";
+
+import { spawn } from "child_process";
+import ffmpegPath from "ffmpeg-static";
+
+
 
 const event = {
   name: "messageCreate",
@@ -94,6 +112,8 @@ const event = {
           ? track.releaseDate.slice(0, 4)
           : "Unknown";
 
+        await message.reply(track.trackName +" by " +track.artistName);
+
         const card = new EmbedBuilder()
           .setColor(0x1db954)
           .setTitle(track.trackName)
@@ -160,7 +180,91 @@ const event = {
 
       return;
     }
+    
+    // ==================
+    // AI Voice channel play song feature
+    if (content.startsWith("/play ")) {
+        const songName = rawContent.slice(6).trim();
 
+        if (!songName) {
+            return message.reply("Please provide a song name!");
+        }
+
+        try {
+            const response = await axios.get(
+            "https://itunes.apple.com/search",
+            {
+                params: {
+                term: songName,
+                entity: "song",
+                limit: 1
+                }
+            }
+            );
+
+            const track = response.data.results?.[0];
+
+            if (!track || !track.previewUrl) {
+            return message.reply("Couldn't find a playable song!");
+            }
+
+            await playSong(message, track);
+
+        } catch (error) {
+            console.error(error);
+            message.reply("Something went wrong while playing the song.");
+        }
+
+    }
+
+
+    // Helper function to playSong
+    
+    async function playSong(message, track) {
+    const channel = message.guild.channels.cache.get(VOICE_CHANNEL_ID);
+
+    if (!channel || !channel.isVoiceBased()) {
+        return message.reply("I couldn't find that voice channel!");
+    }
+
+    const connection = joinVoiceChannel({
+        channelId: channel.id,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+        selfDeaf: true
+    });
+
+    const player = createAudioPlayer();
+
+    const ffmpeg = spawn(ffmpegPath, [
+        "-i", track.previewUrl,
+        "-f", "s16le",
+        "-ar", "48000",
+        "-ac", "2",
+        "pipe:1"
+    ]);
+
+    ffmpeg.on("error", (error) => {
+        console.error("FFmpeg error:", error);
+    });
+
+    const resource = createAudioResource(ffmpeg.stdout, {
+        inputType: StreamType.Raw
+    });
+
+    player.play(resource);
+    connection.subscribe(player);
+
+    player.on(AudioPlayerStatus.Idle, () => {
+        connection.destroy();
+        ffmpeg.kill();
+    });
+
+    await message.reply(`🎵 Playing **${track.trackName}** by **${track.artistName}**!`);
+    }
+
+
+    //jack part
     // ==================================================
     // Similar Song Recommendation (/similar)
     // Uses Google Gemini API
@@ -227,6 +331,7 @@ Rules:
 
       return;
     }
+
 
     // ==================================================
     // General AI Chat (/ai)

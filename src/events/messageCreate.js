@@ -1,4 +1,5 @@
 
+main
 import { askGemini } from "../services/gemini.js";
 import axios from "axios";
 import { EmbedBuilder } from "discord.js";
@@ -112,6 +113,7 @@ const event = {
           : "Unknown";
 
         await message.reply(track.trackName +" by " +track.artistName);
+
         const card = new EmbedBuilder()
           .setColor(0x1db954)
           .setTitle(track.trackName)

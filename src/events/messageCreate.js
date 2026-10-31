@@ -1,5 +1,5 @@
 
-main
+
 import { askGemini } from "../services/gemini.js";
 import axios from "axios";
 import { EmbedBuilder } from "discord.js";

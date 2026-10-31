@@ -44,6 +44,7 @@ This sprint expanded our Discord bot with AI-powered conversations, favorite son
 
 --------------------------------------------------------------------------------------------------------
 Week 3
+- First version with AI model Ollama was implemented by Michael Wijaya on Wednesday, October 28
 - We already created the main repository (this repo) for the group 2 discord bot assignment and also created a Kanban project board with our ideas for brainstorming what the discord bot should do.
 - We already added all 5 members as admins and collaborators for this main group 2 repository.
 - We already forked our own personal fork of the main group 2's repository.

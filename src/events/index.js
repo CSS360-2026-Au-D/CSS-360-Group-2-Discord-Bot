@@ -3,6 +3,7 @@ import event from "./messageCreate.js";
 
 const client = new Client({
   intents: [
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,

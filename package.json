@@ -5,7 +5,8 @@
   "main": "src/events/index.js",
   "scripts": {
     "start": "node src/events/index.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test"
   },
   "license": "ISC",
   "dependencies": {

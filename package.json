@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node src/events/index.js",
     "lint": "eslint .",
-    "testM": "node --test",
-    "test": "vitest run"
+    "testMike": "node --test test_Michael/favorite-song.test.js",
+    "testTyler": "vitest run Test_Tyler/favoriteSong.unit.test.js"
   },
   "license": "ISC",
   "dependencies": {

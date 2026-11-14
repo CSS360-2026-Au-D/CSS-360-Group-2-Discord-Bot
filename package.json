@@ -7,7 +7,9 @@
     "start": "node src/events/index.js",
     "lint": "eslint .",
     "testMike": "node --test test_Michael/favorite-song.test.js",
-    "testTyler": "vitest run Test_Tyler/favoriteSong.unit.test.js"
+    "testTyler": "vitest run Test_Tyler/favoriteSong.unit.test.js",
+    "smokeTest": "vitest run Test_Tyler/messageCreate.smoke.test.js"
+
   },
   "license": "ISC",
   "dependencies": {

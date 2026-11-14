@@ -497,7 +497,7 @@ The five unit tests cover the following behaviors:
 | 4 | One user tries to view another user's favorites | The bot only displays the requesting user's favorites and does not reveal another user's songs. | 
 | 5 | User tries to save a song sent by another human user | The bot does not save the song or send a confirmation message. |
 
-To manually run the tests, developers can type `npm test` into the terminal for their codespace. This runs the test script defined in package.json, which uses Node.js's built-in test runner.
+To manually run the tests, developers can type `npm run testMike` into the terminal for their codespace. This runs the test script defined in package.json, which uses Node.js's built-in test runner.
 
 ### Findings
 
@@ -555,8 +555,10 @@ The workflow runs on an Ubuntu environment and performs the following steps:
 | 1 | `actions/checkout@v4` | Downloads the repository's code into the GitHub Actions environment. |
 | 2 | `actions/setup-node@v4` | Sets up Node.js version 24. |
 | 3 | `npm ci` | Installs project dependencies using package-lock.json. |
-| 4 | `npm run link` | Runs ESLint to identify code-quality issues and violations of configured rules. | 
-| 5 | `npm test` | Runs the automated unit tests using Node.js's built-in test runner. |
+| 4 | `npm run lint` | Runs ESLint to identify code-quality issues and violations of configured rules. | 
+| 5 | `npm run testMike` | Runs unit tests for favorite-song.js using Node.js's built-in test runner. |
+| 6 | `npm run testTyler` | Runs unit tests for favorite-song.js using Vitest. |
+| 7 | `npm run smokeTest` | Runs smoke tests for messageCreate.js using Vitest. |
 
 The workflow uses npm ci because GitHub Actions runs in a fresh environment that does not automatically contain the project's dependencies. Installing them allows ESLint and the unit tests to execute correctly.
 

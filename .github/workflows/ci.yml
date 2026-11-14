@@ -30,5 +30,9 @@ jobs:
       - name: Run Michael's unit tests
         run: npm run testMike
 
-      - name: Run friend's unit and smoke tests
+      - name: Run Michael's unit tests
         run: npm run testTyler
+        
+      - name: Run Tyler's tests
+        run: npm run smokeTest
+

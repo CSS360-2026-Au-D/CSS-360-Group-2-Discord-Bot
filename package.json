@@ -5,12 +5,9 @@
   "main": "src/events/index.js",
   "scripts": {
     "start": "node src/events/index.js",
-<<<<<<< HEAD
     "lint": "eslint .",
-    "test": "node --test"
-=======
+    "testM": "node --test",
     "test": "vitest run"
->>>>>>> 23d72614e6ce1880d8bddf19631f96706edd2ef8
   },
   "license": "ISC",
   "dependencies": {
@@ -28,11 +25,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-<<<<<<< HEAD
-    "eslint": "^10.14.0"
-  }
-}
-=======
     "eslint": "^10.14.0",
     "eslint-config-xo": "^7.0.0",
     "eslint-plugin-vue": "^10.12.0",
@@ -43,4 +35,3 @@
   }
 }
 
->>>>>>> 23d72614e6ce1880d8bddf19631f96706edd2ef8

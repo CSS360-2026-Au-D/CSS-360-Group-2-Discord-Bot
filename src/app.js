@@ -4,7 +4,7 @@ import path from "path";
 
 const TOKEN = process.env.TOKEN;
 
-const { Guilds, GuildMembers, GuildMessages, MessageContent } =
+const { Guilds, GuildMessages, MessageContent } =
   GatewayIntentBits;
 const { User, Message, GuildMember, ThreadMember } = Partials;
 

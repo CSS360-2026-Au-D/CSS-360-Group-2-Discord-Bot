@@ -56,5 +56,6 @@ const event = {
 
     }
 };
+
 export default event;
-export {favorites };
+export { favorites };

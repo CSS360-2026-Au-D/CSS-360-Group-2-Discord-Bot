@@ -100,3 +100,76 @@ A realistic first goal is 30% line coverage, focused on these three areas. After
 ### Recommendation
 
 Use the existing mocha and chai setup, and add c8 to the `test` script so every run prints a coverage report. Mock `askGemini` and axios so tests never call real APIs. Then add `npm test` to the GitHub Actions workflow so every push is checked, and fail the build if coverage drops below the agreed goal.
+
+## 7. Smoke Test (Tyler) 
+
+### Purpose
+
+This test challenges `src/events/messageCreate.js` across all of its commands and performs a broad, shallow check of every command from end to end without touching any real services. This smoke test only seeks to determine if the `messageCreate.js` executes at its most basic level for every command without crashing. It confirms that each feature responds correctly to normal input and bad input. This test catches breaks after a change.   
+
+### Function
+
+The test mocks all external dependencies (Gemini AI, axios/iTunes API, @discordjs/voice, child_process, ffmpeg-static) so nothing joins a real voice channel, touches the network, or launches an audio process. The `makeMessage()` helper builds a mock message object with the properties the file uses (content, author.bot, reply, channel.send, guild.channels.cache.get), and the fakeTrack object is sent to iTunesAPI for an iTunes result. Each test mock's behavior then determines what the file did: what replies were sent, which functions were called, and which were not called. 
+
+### Tests 
+
+| Area | Behaviors Tested | 
+| --- | --- | 
+| Event Definition | The export has `name === messageCreate` and `execute` is a function |
+| Filtering | Bot messages and unrelated commands/messages get no reply |
+| Basic Commands | `hello` -> "Welcome", `ping` -> "Pong" (case-insensitive), `help` -> "Available Commands" |
+| `/song` | Missing argument prompt, successful iTunes lookup (correct API URL and search term, embed with preview), no results, Does API handle failure correctly |
+| `/play` | Joins voice channel once and announces the song, no playable track and does not join, missing voice channel |
+| `/similar` | Missing argument, Gemini is called with the song name and results are sent as "Similar songs", Gemini failure |
+| `/ai` | Missing argument, Gemini answer is returned as a reply, long answers split into chunks, Gemini failure |
+
+### Results
+
+The test ran 18 tests in 18ms with most time spent importing (85%) rather than running tests (8%). Every command path in messageCreate.js, including the error paths, behaves as intended. 
+
+### Recommendations
+
+- Change the voice channel ID from a fixed ID to using the requestor's channel instead for the `/play` command. A fixed ID limits the bot to only joining the 'lounge' channel. The bot can prompt the requestor to join a voice channel first (if they aren't already in one) before the bot plays the song. This will also make the error "I couldn't find that voice channel!" more meaningful.
+- Each command also has its own error message. A wrapper around the dispatcher ensures an unexpected throw never goes unanswered or crashes the listener.
+- The services that are integrated into messageCreate.js can also be split into their own services folder (services/itunes.js, services/gemini.js). This can also be applied to the other functions (commands/song.js, commands/play.js, command/help.js). 
+
+## 8. Unit Test (favorite-song.js)
+
+### Purpose
+
+This test checks that the favorites feature is correct in isolation. `viewFavorites` and `saveFavorite` store and display the correct requested songs, ignores bot messages, ignores the wrong arguments, and keeps each user's list separate. 
+
+### Function
+- `makeMessage()` builds a fake Discord message, a `reply` function, `client.user.id` (the bot's ID), and `channel.message.fetch` returning an original message.
+- `botSong()` builds the bot's original message, optionally from a different bot ID.
+- `beforeEach` calls `faovrites.clear()`, so state refreshes between tests.
+- Each test calls `event.execute(message)` and responds to replies, receives the call, and maps contents.
+
+### Tests
+
+| Area | Case Tests | 
+| --- | --- |
+| Event Definition | `name === "messageCreate"`
+| Filtering | Ignores bot messages and non-commands |
+| `viewFavorites` | No entry entered, empty array, numbered lists, whitespace trimming, per-user isolation |
+| `saveFavorite` (Success) | Message retrieved from user, does content save, confirms with "Added to your favorites!" |
+| `saveFavorite` (Rejections) | No reply from user, is the message from a bot, empty or whitespace | 
+| Data Behavior | Multiple saves accumulated, users stay separate, save and review |
+
+### Results
+
+The test ran 17 tests in 14ms with most time spent importing (86%) rather than tests (4%). Every command, including error paths, behave as intended. However the source code shows some problems the tests don't catch, and a couple of passing tests are hiding them. 
+
+### Recommendation
+
+- `favorite-song.js` runs `favorites.set(userId, [])` before checking whether the message is a reply, whether the original is from the bot, or whether it has content. Every rejected `/saveFavorite` command leaves `favorites.get(userId) === []`. Every invalid entry is entered as a [] entry. This issue could impact memory if the user enters a large number of empty or invalid entries.
+- There are silent failures. Not replying to a message, replying to a user's message, or replying to the bot's embed-only message (empty `content`) all produce no response. Users may think the command is broken. The tests show "no reply" as the default response.
+- There is strict command matching. `content === "viewFavorites"` is case-sensitive, so `/viewFavorites` is ignored, and other handler lowercases its commands. The commands also can't have any trailing text or spaces.
+- The same song can be saved repeatedly because the list unbounded, and there's no `/removeFavorite` or `clearFavorites` command.
+- `/viewFavorites` can exceed Discord's 2000-character limit. A user with a long favorites list will get a failed reply and an unhandled rejection.
+- All favorites also vanish on every restart or redeployment of the bot
+
+
+
+
+

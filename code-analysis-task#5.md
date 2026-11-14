@@ -101,7 +101,7 @@ A realistic first goal is 30% line coverage, focused on these three areas. After
 
 Use the existing mocha and chai setup, and add c8 to the `test` script so every run prints a coverage report. Mock `askGemini` and axios so tests never call real APIs. Then add `npm test` to the GitHub Actions workflow so every push is checked, and fail the build if coverage drops below the agreed goal.
 
-## 7. Smoke Test (Tyler) 
+## 7. Smoke Test (Tyler M) 
 
 ### Purpose
 
@@ -127,13 +127,15 @@ The test mocks all external dependencies (Gemini AI, axios/iTunes API, @discordj
 
 The test ran 18 tests in 18ms with most time spent importing (85%) rather than running tests (8%). Every command path in messageCreate.js, including the error paths, behaves as intended. 
 
+![c8 coverage output](docs/images/smoke-test-results.png)
+
 ### Recommendations
 
 - Change the voice channel ID from a fixed ID to using the requestor's channel instead for the `/play` command. A fixed ID limits the bot to only joining the 'lounge' channel. The bot can prompt the requestor to join a voice channel first (if they aren't already in one) before the bot plays the song. This will also make the error "I couldn't find that voice channel!" more meaningful.
 - Each command also has its own error message. A wrapper around the dispatcher ensures an unexpected throw never goes unanswered or crashes the listener.
 - The services that are integrated into messageCreate.js can also be split into their own services folder (services/itunes.js, services/gemini.js). This can also be applied to the other functions (commands/song.js, commands/play.js, command/help.js). 
 
-## 8. Unit Test (favorite-song.js)
+## 8. Unit Test - `favorite-song.js` (Tyler M)
 
 ### Purpose
 
@@ -159,6 +161,8 @@ This test checks that the favorites feature is correct in isolation. `viewFavori
 ### Results
 
 The test ran 17 tests in 14ms with most time spent importing (86%) rather than tests (4%). Every command, including error paths, behave as intended. However the source code shows some problems the tests don't catch, and a couple of passing tests are hiding them. 
+
+![c8 coverage output](docs/images/Unit Test Results.png)
 
 ### Recommendation
 

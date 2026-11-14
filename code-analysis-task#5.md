@@ -162,7 +162,7 @@ This test checks that the favorites feature is correct in isolation. `viewFavori
 
 The test ran 17 tests in 14ms with most time spent importing (86%) rather than tests (4%). Every command, including error paths, behave as intended. However the source code shows some problems the tests don't catch, and a couple of passing tests are hiding them. 
 
-![c8 coverage output](docs/images/Unit Test Results.png)
+![c8 coverage output](docs/images/Unit-Test-Results.png)
 
 ### Recommendation
 

@@ -28,13 +28,10 @@ const event = {
         //stop the bot if the message is not saveFavorite
 
         if(content !== "/saveFavorite") return;
-        const userId =message.author.id;
 
-        if (!favorites.has(userId)) {
-            favorites.set(userId, []);
-        }
-        const userFavorites = favorites.get(userId);
+        const userId =message.author.id;
         const replyId= message.reference?.messageId;
+
         if (!replyId) {
             return;
         }
@@ -50,6 +47,14 @@ const event = {
         if (!song.trim()) {
             return;
         }
+
+        // Only create a favorites list after validating the song
+        if (!favorites.has(userId)) {
+            favorites.set(userId, []);
+        }
+
+        const userFavorites = favorites.get(userId);
+
         userFavorites.push(song);
 
         await message.reply ("Added to your favorites!");

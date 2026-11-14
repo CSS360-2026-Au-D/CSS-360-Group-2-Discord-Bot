@@ -125,7 +125,7 @@ The test mocks all external dependencies (Gemini AI, axios/iTunes API, @discordj
 
 ### Results
 
-The test ran 18 tests in 18ms with most time spent importing (85%) rather than running tests (8%). Every command path in messageCreate.js, including the error paths, behaves as intended. 
+The test ran 18 tests in 18ms with most time spent importing (86%) rather than running tests (4%). Every command path in messageCreate.js, including the error paths, behaves as intended. 
 
 ![c8 coverage output](docs/images/smoke-test-results.png)
 

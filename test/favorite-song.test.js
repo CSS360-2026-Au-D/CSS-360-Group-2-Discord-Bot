@@ -107,19 +107,20 @@ test("Users cannot see another user's favorites", async () => {
     ]);
 });
 
-test("A user cannot save a song sent by another bot", async () => {
-    const anotherBotSong = {
-        author: { bot: true, id: "another-bot" },
-        content: "Some song"
+test("A user cannot save a song sent by another user", async () => {
+    const userSong = {
+        author: { bot: false, id: "user-1" },
+        content: "Hello by Adele"
     };
 
     const { message, replies } = createMessage({
         content: "/saveFavorite",
-        fetchedMessage: anotherBotSong
+        userId: "user-2",
+        fetchedMessage: userSong
     });
 
     await event.execute(message);
 
-    assert.equal(favorites.get("user-1").length, 0);
+    assert.equal(favorites.has("user-2"), false);
     assert.equal(replies.length, 0);
 });

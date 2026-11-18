@@ -1,12 +1,13 @@
-
 import { askGemini } from "../services/gemini.js";
 import axios from "axios";
 import { EmbedBuilder } from "discord.js";
 import favoriteSong from "./favorite-song.js";
 
 
-const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
-// const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
+// const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
+// const VOICE_CHANNEL_ID = "1559754789489877004"; //this is for STudy room 1 main server
+
+const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
 
 // for the music bot to play music
 import {
@@ -14,11 +15,13 @@ import {
   createAudioPlayer,
   createAudioResource,
   AudioPlayerStatus,
-  StreamType
+  StreamType,
+  entersState,
+  VoiceConnectionStatus
+
 } from "@discordjs/voice";
 
 import { spawn } from "child_process";
-import ffmpegPath from "ffmpeg-static";
 
 
 
@@ -237,37 +240,80 @@ const event = {
         channelId: channel.id,
         guildId: channel.guild.id,
         adapterCreator: channel.guild.voiceAdapterCreator,
-        selfDeaf: true
+        selfDeaf: false
     });
 
     const player = createAudioPlayer();
 
-    const ffmpeg = spawn(ffmpegPath, [
-        "-i", track.previewUrl,
-        "-f", "s16le",
-        "-ar", "48000",
-        "-ac", "2",
-        "pipe:1"
-    ]);
+    try {
+        // Wait until Discord voice connection is ready.
+        await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
 
-    ffmpeg.on("error", (error) => {
-        console.error("FFmpeg error:", error);
-    });
+        const ffmpeg = spawn("ffmpeg", [
+            "-hide_banner",
+            "-loglevel", "info",
+            "-i", track.previewUrl,
+            "-vn",
+            "-f", "s16le",
+            "-ar", "48000",
+            "-ac", "2",
+            "pipe:1"
+        ]);
 
-    const resource = createAudioResource(ffmpeg.stdout, {
-        inputType: StreamType.Raw
-    });
+        ffmpeg.stderr.on("data", (data) => {
+            console.log("FFmpeg:", data.toString());
+        });
 
-    player.play(resource);
-    connection.subscribe(player);
+        ffmpeg.on("error", (error) => {
+            console.error("FFmpeg error:", error);
+        });
 
-    player.on(AudioPlayerStatus.Idle, () => {
+        ffmpeg.on("close", (code, signal) => {
+            console.log("FFmpeg closed. Code:", code, "Signal:", signal);
+        });
+
+        ffmpeg.stdout.on("end", () => {
+            console.log("FFmpeg audio stream ended.");
+        });
+
+        const resource = createAudioResource(ffmpeg.stdout, {
+            inputType: StreamType.Raw
+        });
+
+        player.on("stateChange", (oldState, newState) => {
+            console.log(
+                `Player: ${oldState.status} -> ${newState.status}`
+            );
+        });
+
+        player.on("error", (error) => {
+            console.error("Player error:", error);
+        });
+
+        connection.subscribe(player);
+        player.play(resource);
+
+        player.once(AudioPlayerStatus.Idle, () => {
+            console.log("Playback finished. Cleaning up.");
+
+            connection.destroy();
+
+            if (!ffmpeg.killed) {
+                ffmpeg.kill();
+            }
+        });
+
+        await message.reply(
+            `🎵 Playing **${track.trackName}** by **${track.artistName}**!`
+        );
+
+    } catch (error) {
+        console.error("Playback setup error:", error);
         connection.destroy();
-        ffmpeg.kill();
-    });
 
-    await message.reply(`🎵 Playing **${track.trackName}** by **${track.artistName}**!`);
+        await message.reply("Couldn't connect to the voice channel.");
     }
+}
 
 
     //jack part

@@ -4,10 +4,10 @@ import { EmbedBuilder } from "discord.js";
 import favoriteSong from "./favorite-song.js";
 
 
-// const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
+const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
 // const VOICE_CHANNEL_ID = "1559754789489877004"; //this is for STudy room 1 main server
 
-const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
+// const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
 
 // for the music bot to play music
 import {

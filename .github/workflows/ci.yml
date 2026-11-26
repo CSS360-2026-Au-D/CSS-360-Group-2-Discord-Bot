@@ -35,4 +35,7 @@ jobs:
         
       - name: Run Tyler's tests
         run: npm run smokeTest
+        
+      - name: Run Guess the Song tests
+        run: npm run testGuess
 

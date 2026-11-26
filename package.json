@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "testMike": "node --test test_Michael/favorite-song.test.js",
     "testTyler": "vitest run test_Tyler/favoriteSong.unit.test.js",
-    "smokeTest": "vitest run test_Tyler/messageCreate.smoke.test.js"
+    "smokeTest": "vitest run test_Tyler/messageCreate.smoke.test.js",
+    "testGuess": "node --test test/guess-game.test.js"
 
   },
   "license": "ISC",

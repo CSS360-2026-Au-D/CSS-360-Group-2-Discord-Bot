@@ -3,7 +3,7 @@ import { askGemini } from "../services/gemini.js";
 import axios from "axios";
 import { EmbedBuilder } from "discord.js";
 import favoriteSong from "./favorite-song.js";
-
+import guessGame, { isPlayingGuessGame } from "./guess-game.js";
 
 const VOICE_CHANNEL_ID = "1559754789489877002"; //this is for lounge main server
 // const VOICE_CHANNEL_ID = "1559756462203474008";   //this is for test server
@@ -28,6 +28,14 @@ const event = {
   async execute(message) {
     // Ignore messages from bots
     if (message.author.bot) return;
+
+    // If this person is in the middle of /guess, their message is a guess,
+    // not a command, so don't run it as "ping", "help", etc.  
+    if (isPlayingGuessGame(message)) return; 
+
+    // Run Guess the Song (/guess, /leaderboard) 
+    await guessGame.execute(message); 
+
 
 
     // Run favorite song feature
@@ -58,7 +66,9 @@ const event = {
         "help - Show commands\n" +
         "/ai question - Ask Gemini AI\n" +
         "/similar song name - Recommend similar songs\n" +
-        "/song song name - Search for a song and preview"
+        "/song song name - Search for a song and preview\n"+
+        "/guess [genre] - Play Guess the Song\n" +
+        "/leaderboard - Show Guess the Song scores"
       );
       return;
     }

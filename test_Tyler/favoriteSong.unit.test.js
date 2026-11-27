@@ -33,6 +33,10 @@ function botSong(content = "Never Gonna Give You Up", authorId = BOT_ID) {
     return { content, author: { id: authorId, bot: true } };
 }
 
+function favoriteEmbed(message) {
+    return message.reply.mock.calls[0][0].embeds[0].toJSON();
+}
+
 describe("messageCreate event", () => {
     beforeEach(() => {
         favorites.clear();
@@ -86,8 +90,15 @@ describe("messageCreate event", () => {
             await event.execute(message);
 
             expect(message.reply).toHaveBeenCalledTimes(1);
-            expect(message.reply).toHaveBeenCalledWith(
-                "Your favorite songs:\n1. Song A\n2. Song B\n3. Song C"
+            const embed = favoriteEmbed(message);
+            expect(embed.title).toBe("🎧 Your Personal Soundtrack");
+            expect(embed.description).toBe(
+                "Your favorite tracks, all in one place.\n\n" +
+                "**1.**  Song A\n\n**2.**  Song B\n\n**3.**  Song C"
+            );
+            expect(embed.fields[0].value).toBe("3 songs saved");
+            expect(embed.fields[1].value).toBe(
+                "`/removeFavorite <number>`\n`/clearFavorites`"
             );
         });
 
@@ -97,7 +108,10 @@ describe("messageCreate event", () => {
 
             await event.execute(message);
 
-            expect(message.reply).toHaveBeenCalledWith("Your favorite songs:\n1. Song A");
+            const embed = favoriteEmbed(message);
+            expect(embed.description).toBe(
+                "Your favorite tracks, all in one place.\n\n**1.**  Song A"
+            );
         });
 
         it("only shows the requesting user's favorites", async () => {
@@ -107,7 +121,9 @@ describe("messageCreate event", () => {
 
             await event.execute(message);
 
-            expect(message.reply).toHaveBeenCalledWith("Your favorite songs:\n1. Theirs");
+            const embed = favoriteEmbed(message);
+            expect(embed.description).toContain("**1.**  Theirs");
+            expect(embed.description).not.toContain("Mine");
         });
     });
 
@@ -144,11 +160,13 @@ describe("messageCreate event", () => {
             await event.execute(message);
 
             expect(message.channel.messages.fetch).not.toHaveBeenCalled();
-            expect(message.reply).not.toHaveBeenCalled();
+            expect(message.reply).toHaveBeenCalledWith(
+                "Reply to one of my song messages with /saveFavorite to save it."
+            );
             expect(favorites.get("user-1") ?? []).toEqual([]);
         });
 
-        it("does nothing when the original message was not sent by a bot", async () => {
+        it("explains when the original message was not sent by this bot", async () => {
             const message = makeMessage({
                 content: "/saveFavorite",
                 referenceId: "orig-1",
@@ -157,11 +175,13 @@ describe("messageCreate event", () => {
 
             await event.execute(message);
 
-            expect(message.reply).not.toHaveBeenCalled();
+            expect(message.reply).toHaveBeenCalledWith(
+                "You can only save a song message sent by this bot."
+            );
             expect(favorites.get("user-1") ?? []).toEqual([]);
         });
 
-        it("does nothing when the original message came from a different bot", async () => {
+        it("explains when the original message came from a different bot", async () => {
             const message = makeMessage({
                 content: "/saveFavorite",
                 referenceId: "orig-1",
@@ -170,11 +190,13 @@ describe("messageCreate event", () => {
 
             await event.execute(message);
 
-            expect(message.reply).not.toHaveBeenCalled();
+            expect(message.reply).toHaveBeenCalledWith(
+                "You can only save a song message sent by this bot."
+            );
             expect(favorites.get("user-1") ?? []).toEqual([]);
         });
 
-        it("does nothing when the original message content is empty or whitespace", async () => {
+        it("explains when the original message contains no song", async () => {
             const message = makeMessage({
                 content: "/saveFavorite",
                 referenceId: "orig-1",
@@ -183,7 +205,9 @@ describe("messageCreate event", () => {
 
             await event.execute(message);
 
-            expect(message.reply).not.toHaveBeenCalled();
+            expect(message.reply).toHaveBeenCalledWith(
+                "I couldn't find a song title in that message. Reply to a song result and try again."
+            );
             expect(favorites.get("user-1") ?? []).toEqual([]);
         });
 
@@ -234,7 +258,8 @@ describe("messageCreate event", () => {
             const viewMessage = makeMessage({ content: "/viewFavorites" });
             await event.execute(viewMessage);
 
-            expect(viewMessage.reply).toHaveBeenCalledWith("Your favorite songs:\n1. Song A");
+            const embed = favoriteEmbed(viewMessage);
+            expect(embed.description).toContain("**1.**  Song A");
         });
     });
 });

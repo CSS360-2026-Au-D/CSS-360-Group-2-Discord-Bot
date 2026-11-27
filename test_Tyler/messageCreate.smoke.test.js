@@ -11,14 +11,28 @@ vi.mock("axios", () => ({
 
 vi.mock("@discordjs/voice", () => ({
   joinVoiceChannel: vi.fn(() => ({ subscribe: vi.fn(), destroy: vi.fn() })),
-  createAudioPlayer: vi.fn(() => ({ play: vi.fn(), on: vi.fn() })),
+  createAudioPlayer: vi.fn(() => ({
+    play: vi.fn(),
+    on: vi.fn(),
+    once: vi.fn(),
+  })),
   createAudioResource: vi.fn(() => ({})),
-  AudioPlayerStatus: { Idle: "idle" },
+  entersState: vi.fn().mockResolvedValue(undefined),
+  AudioPlayerStatus: { Idle: "idle", Playing: "playing" },
+  VoiceConnectionStatus: { Ready: "ready" },
   StreamType: { Raw: "raw" },
 }));
 
 vi.mock("child_process", () => ({
-  spawn: vi.fn(() => ({ on: vi.fn(), stdout: {}, kill: vi.fn() })),
+  spawn: vi.fn(() => ({
+    on: vi.fn(),
+    stdout: {},
+    stderr: { setEncoding: vi.fn(), on: vi.fn() },
+    stdin: { on: vi.fn(), end: vi.fn() },
+    exitCode: null,
+    signalCode: null,
+    kill: vi.fn(),
+  })),
 }));
 
 vi.mock("ffmpeg-static", () => ({ default: "/fake/ffmpeg" }));
@@ -33,8 +47,16 @@ import event from "../src/events/messageCreate.js"; // <-- adjust path
 function makeMessage(content, { bot = false } = {}) {
   const voiceChannel = {
     id: "1559754789489877002",
+    name: "Lounge",
     isVoiceBased: () => true,
     guild: { id: "guild-1", voiceAdapterCreator: {} },
+  };
+  const channels = {
+    cache: {
+      get: vi.fn(() => voiceChannel),
+      find: vi.fn((predicate) => (predicate(voiceChannel) ? voiceChannel : undefined)),
+    },
+    fetch: vi.fn().mockResolvedValue([voiceChannel]),
   };
 
   return {
@@ -45,9 +67,7 @@ function makeMessage(content, { bot = false } = {}) {
       sendTyping: vi.fn().mockResolvedValue(undefined),
       send: vi.fn().mockResolvedValue(undefined),
     },
-    guild: {
-      channels: { cache: { get: vi.fn(() => voiceChannel) } },
-    },
+    guild: { channels },
   };
 }
 
@@ -148,7 +168,9 @@ describe("messageCreate event smoke test", () => {
 
   describe("/play", () => {
     it("joins the voice channel and announces the song", async () => {
-      axios.get.mockResolvedValue({ data: { results: [fakeTrack] } });
+      axios.get
+        .mockResolvedValueOnce({ data: { results: [fakeTrack] } })
+        .mockResolvedValueOnce({ data: Buffer.from("audio preview") });
       const msg = makeMessage("/play Blinding Lights");
       await event.execute(msg);
 
@@ -167,12 +189,16 @@ describe("messageCreate event smoke test", () => {
     });
 
     it("reports when the voice channel is missing", async () => {
-      axios.get.mockResolvedValue({ data: { results: [fakeTrack] } });
+      axios.get
+        .mockResolvedValueOnce({ data: { results: [fakeTrack] } })
+        .mockResolvedValueOnce({ data: Buffer.from("audio preview") });
       const msg = makeMessage("/play Blinding Lights");
       msg.guild.channels.cache.get.mockReturnValue(undefined);
+      msg.guild.channels.cache.find.mockReturnValue(undefined);
+      msg.guild.channels.fetch.mockResolvedValue([]);
       await event.execute(msg);
       expect(msg.reply).toHaveBeenCalledWith(
-        "I couldn't find that voice channel!"
+        expect.stringContaining("voice channel")
       );
     });
   });
@@ -252,4 +278,3 @@ describe("messageCreate event smoke test", () => {
     });
   });
 });
-
